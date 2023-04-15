@@ -12,4 +12,3 @@ async fn main() -> std::io::Result<()> {
     application.run_until_stopped().await?;
     Ok(())
 }
-
