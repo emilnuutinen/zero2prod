@@ -96,4 +96,3 @@ async fn get_confirmed_subscribers(
     .collect();
     Ok(confirmed_subscribers)
 }
-
