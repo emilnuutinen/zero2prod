@@ -1,7 +1,6 @@
+use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
-
-use crate::domain::SubscriberEmail;
 
 pub struct EmailClient {
     http_client: Client,
@@ -28,7 +27,7 @@ impl EmailClient {
 
     pub async fn send_email(
         &self,
-        recipient: SubscriberEmail,
+        recipient: &SubscriberEmail,
         subject: &str,
         html_content: &str,
         text_content: &str,
@@ -69,16 +68,13 @@ struct SendEmailRequest<'a> {
 mod tests {
     use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
-    use claims::assert_err;
-    use claims::assert_ok;
+    use claims::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
     use secrecy::Secret;
-    use wiremock::matchers::any;
-    use wiremock::matchers::{header, header_exists, method, path};
-    use wiremock::Request;
-    use wiremock::{Mock, MockServer, ResponseTemplate};
+    use wiremock::matchers::{any, header, header_exists, method, path};
+    use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 
     struct SendEmailBodyMatcher;
 
@@ -87,6 +83,7 @@ mod tests {
             let result: Result<serde_json::Value, _> = serde_json::from_slice(&request.body);
             if let Ok(body) = result {
                 body.get("From").is_some()
+                    && body.get("To").is_some()
                     && body.get("Subject").is_some()
                     && body.get("HtmlBody").is_some()
                     && body.get("TextBody").is_some()
@@ -139,7 +136,7 @@ mod tests {
 
         // Act
         let _ = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -159,7 +156,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -181,7 +178,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -203,10 +200,11 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
         assert_err!(outcome);
     }
 }
+
