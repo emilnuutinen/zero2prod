@@ -42,6 +42,24 @@ async fn subscribe_persists_the_new_subscriber() {
 }
 
 #[tokio::test]
+async fn subscribe_fails_if_there_is_a_fatal_database_error() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    // Sabotage the database
+    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
+        .execute(&app.db_pool)
+        .await
+        .unwrap();
+
+    // Act
+    let response = app.post_subscriptions(body.into()).await;
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 500);
+}
+
+#[tokio::test]
 async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     // Arrange
     let app = spawn_app().await;
@@ -131,21 +149,4 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
             description
         );
     }
-}
-
-#[tokio::test]
-async fn subscribe_fails_if_there_is_a_fatal_database_error() {
-    // Arrange
-    let app = spawn_app().await;
-    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
-        .execute(&app.db_pool)
-        .await
-        .unwrap();
-
-    // Act
-    let response = app.post_subscriptions(body.into()).await;
-
-    // Assert
-    assert_eq!(response.status().as_u16(), 500);
 }

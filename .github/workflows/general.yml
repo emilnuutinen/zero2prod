@@ -1,15 +1,16 @@
 name: Rust
 
 on:
+  # NB: this differs from the book's project!
+  # These settings allow us to run this specific CI pipeline for PRs against
+  # this specific branch (a.k.a. book chapter).
   push:
     branches:
-      - main
+      - root-chapter-10-part3
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
-      - main
-
-
+      - root-chapter-10-part3
 
 env:
   CARGO_TERM_COLOR: always
@@ -29,6 +30,10 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -109,6 +114,10 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -131,4 +140,3 @@ jobs:
         run: SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Generate code coverage
         run: cargo tarpaulin --verbose --workspace
-
